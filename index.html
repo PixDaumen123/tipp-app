@@ -12,22 +12,60 @@
     h1 { font-size: 18px; font-weight: 500; color: #666; text-align: center; margin-bottom: 0.75rem; flex-shrink: 0; }
     #stats { display: flex; gap: 10px; margin-bottom: 0.75rem; flex-shrink: 0; }
     .stat { flex: 1; background: #fff; border-radius: 12px; padding: 0.6rem; text-align: center; border: 1px solid #e5e5e5; }
-    .stat-val { font-size: 24px; font-weight: 500; color: #1a1a1a; line-height: 1; }
+    .stat-val { font-size: 24px; font-weight: 500; line-height: 1; }
     .stat-lbl { font-size: 11px; color: #888; margin-top: 3px; }
-    #words-box { flex: 1; background: #fff; border-radius: 12px; padding: 1rem; font-size: 20px; line-height: 1.9; border: 1px solid #e5e5e5; overflow: hidden; user-select: none; margin-bottom: 0.75rem; }
-    .word { display: inline-block; margin-right: 8px; color: #bbb; }
+
+    #words-box {
+      flex-shrink: 0;
+      background: #fff;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e5e5e5;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      position: relative;
+      height: 7rem;
+    }
+
+    #lines-wrap {
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      height: 3rem;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .word { font-size: 19px; color: #bbb; white-space: nowrap; }
     .word.done { color: #2d9e75; }
     .word.wrong { color: #e24b4a; text-decoration: underline wavy; }
     .word.current { color: #1a1a1a; font-weight: 500; }
-    #cursor { display: inline-block; width: 2px; height: 1.2em; background: #1a1a1a; vertical-align: middle; animation: blink 0.8s steps(1) infinite; margin-left: 1px; }
+
+    #fade-top {
+      position: absolute; top: 0; left: 0; right: 0; height: 1rem;
+      background: linear-gradient(#fff, transparent);
+      pointer-events: none; z-index: 1; opacity: 0;
+    }
+
+    #cursor {
+      display: inline-block; width: 2px; height: 1.3em;
+      background: #1a1a1a; vertical-align: middle;
+      animation: blink 0.8s steps(1) infinite;
+    }
     @keyframes blink { 50% { opacity: 0; } }
+
     #bottom { flex-shrink: 0; }
     #word-input { width: 100%; padding: 14px 16px; font-size: 18px; border-radius: 12px; border: 1.5px solid #ddd; background: #fff; color: #1a1a1a; outline: none; font-family: system-ui, sans-serif; }
     #word-input:focus { border-color: #888; }
-    #start-btn, #start-btn2 { width: 100%; margin-top: 0.6rem; padding: 12px; font-size: 15px; border-radius: 12px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; font-family: system-ui, sans-serif; }
+    button { width: 100%; margin-top: 0.6rem; padding: 12px; font-size: 15px; border-radius: 12px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; font-family: system-ui, sans-serif; }
+
     #result-box { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    #result-box h2 { font-size: 20px; font-weight: 500; margin-bottom: 0.5rem; }
-    .big { font-size: 72px; font-weight: 500; line-height: 1; margin: 0.75rem 0; }
+    .big { font-size: 72px; font-weight: 500; line-height: 1; margin: 0.5rem 0; }
     .wpm-label { font-size: 15px; color: #888; }
     .sub { color: #888; font-size: 14px; margin: 0.75rem 0 1.5rem; }
   </style>
@@ -40,34 +78,205 @@
     <div class="stat"><div class="stat-val" id="acc-val">—</div><div class="stat-lbl">Genauigkeit</div></div>
     <div class="stat"><div class="stat-val" id="timer-val">60</div><div class="stat-lbl">Sekunden</div></div>
   </div>
-  <div id="words-box"></div>
+
+  <div id="words-box">
+    <div id="fade-top"></div>
+    <div id="lines-wrap"></div>
+  </div>
+
   <div id="result-box">
-    <h2>Ergebnis</h2>
+    <h2 style="font-size:20px;font-weight:500;margin-bottom:0.5rem;">Ergebnis</h2>
     <div class="big" id="final-wpm">0</div>
     <div class="wpm-label">Wörter pro Minute</div>
     <p class="sub" id="final-acc"></p>
   </div>
+
   <div id="bottom">
     <input id="word-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tippen um zu starten..." />
     <button id="start-btn">Neu starten</button>
     <button id="start-btn2" style="display:none;">Nochmal</button>
   </div>
 </div>
+
 <script>
 const WORDS = ["die","das","und","ist","in","von","den","mit","auf","des","zu","nicht","als","auch","es","an","war","bei","nach","noch","aber","durch","alle","sie","wir","ihr","haben","werden","einer","oder","hat","sich","ihm","ein","wie","so","man","dann","wenn","aus","dem","mehr","ich","Zeit","Menschen","Leben","Jahr","Welt","Staat","Kinder","Haus","Wasser","Schule","Stadt","Arbeit","Land","Tag","Hand","Weg","Herr","Frau","Geld","Recht","Volk","Buch","Kind","Zahl","Bild","Blick","Teil","Wort","Kraft","Platz","Seite","Geschichte","Frage","Nacht","Licht","Abend","Musik","Spiel","Feuer","Sturm","Traum","Wiese","Brücke","Garten","Baum","Wind","Regen","Sonne","Berg","Fluss","Meer","Vogel","Stein","Blume","Straße","Fenster","Tisch","Stuhl","Brief","Brot","Glas","Zug","Auto","Uhr"];
-let words=[],current=0,started=false,finished=false,timer=null,timeLeft=60,totalCorrect=0,totalWrong=0;
+
+let allWords = [], globalIndex = 0;
+let started = false, finished = false;
+let timer = null, timeLeft = 60, totalCorrect = 0, totalWrong = 0;
+
+// Lines: each line is an array of {word, globalIdx}
+let lines = [];       // array of lines, each = [{word, idx, status}]
+let lineOffset = 0;   // how many lines have been scrolled away
+let currentGlobal = 0;
+
 function shuffle(a){return[...a].sort(()=>Math.random()-0.5);}
-function genWords(){let p=shuffle(WORDS),r=[];while(r.length<80)r=r.concat(shuffle(p));return r.slice(0,80);}
-function renderWords(){const box=document.getElementById('words-box');box.innerHTML=words.map((w,i)=>`<span class="word ${i<current?'done':i===current?'current':''}" id="w${i}">${w}</span>`).join('')+'<span id="cursor"></span>';scrollToCurrent();}
-function scrollToCurrent(){const el=document.getElementById('w'+current);const cur=document.getElementById('cursor');if(el){el.after(cur);el.scrollIntoView({block:'nearest'});}}
-function updateStats(){const elapsed=60-timeLeft;const wpm=elapsed>0?Math.round((totalCorrect/5)/(elapsed/60)):0;document.getElementById('wpm-val').textContent=wpm;const total=totalCorrect+totalWrong;document.getElementById('acc-val').textContent=total>0?Math.round((totalCorrect/total)*100)+'%':'—';document.getElementById('timer-val').textContent=timeLeft;}
-function startTimer(){timer=setInterval(()=>{timeLeft--;updateStats();if(timeLeft<=0)endGame();},1000);}
-function endGame(){clearInterval(timer);finished=true;document.getElementById('word-input').disabled=true;document.getElementById('words-box').style.display='none';document.getElementById('start-btn').style.display='none';document.getElementById('start-btn2').style.display='block';const wpm=Math.round((totalCorrect/5)/1);const total=totalCorrect+totalWrong;const acc=total>0?Math.round((totalCorrect/total)*100):0;document.getElementById('final-wpm').textContent=wpm;document.getElementById('final-acc').textContent=acc+'% Genauigkeit · '+totalCorrect+' Zeichen korrekt';document.getElementById('result-box').style.display='flex';}
-function reset(){clearInterval(timer);words=genWords();current=0;started=false;finished=false;timeLeft=60;totalCorrect=0;totalWrong=0;document.getElementById('word-input').value='';document.getElementById('word-input').disabled=false;document.getElementById('words-box').style.display='';document.getElementById('start-btn').style.display='';document.getElementById('start-btn2').style.display='none';document.getElementById('result-box').style.display='none';document.getElementById('wpm-val').textContent='0';document.getElementById('acc-val').textContent='—';document.getElementById('timer-val').textContent='60';renderWords();}
-document.getElementById('word-input').addEventListener('input',(e)=>{if(finished)return;const val=e.target.value;if(!started&&val.length>0){started=true;startTimer();}if(val.endsWith(' ')){const typed=val.trim();if(typed===''){e.target.value='';return;}if(typed===words[current]){document.getElementById('w'+current).className='word done';totalCorrect+=words[current].length+1;}else{document.getElementById('w'+current).className='word wrong';totalWrong+=typed.length;}current++;e.target.value='';if(current>=words.length){words=words.concat(genWords());renderWords();}scrollToCurrent();updateStats();}});
-document.getElementById('start-btn').addEventListener('click',reset);
-document.getElementById('start-btn2').addEventListener('click',reset);
-reset();
+function moreWords(){let p=shuffle(WORDS),r=[];while(r.length<60)r=r.concat(shuffle(p));allWords=allWords.concat(r.slice(0,60));}
+
+// Build lines by measuring word widths
+function buildLines() {
+  const BOX_WIDTH = document.getElementById('words-box').clientWidth - 32;
+  const FONT = '19px system-ui, sans-serif';
+  const GAP = 6;
+
+  // Use canvas to measure
+  const cv = document.createElement('canvas');
+  const ctx = cv.getContext('2d');
+  ctx.font = FONT;
+
+  lines = [];
+  let currentLine = [];
+  let lineWidth = 0;
+
+  for (let i = 0; i < allWords.length; i++) {
+    const w = allWords[i];
+    const ww = ctx.measureText(w).width;
+    if (currentLine.length > 0 && lineWidth + GAP + ww > BOX_WIDTH) {
+      lines.push(currentLine);
+      currentLine = [{word: w, idx: i, status: 'pending'}];
+      lineWidth = ww;
+    } else {
+      currentLine.push({word: w, idx: i, status: 'pending'});
+      lineWidth += (currentLine.length > 1 ? GAP : 0) + ww;
+    }
+  }
+  if (currentLine.length) lines.push(currentLine);
+}
+
+function getLineOf(globalIdx) {
+  for (let l = 0; l < lines.length; l++) {
+    for (let w = 0; w < lines[l].length; w++) {
+      if (lines[l][w].idx === globalIdx) return l;
+    }
+  }
+  return 0;
+}
+
+function renderLines() {
+  const wrap = document.getElementById('lines-wrap');
+  const currentLine = getLineOf(currentGlobal);
+  // Show from lineOffset
+  const visibleStart = lineOffset;
+
+  wrap.innerHTML = '';
+  for (let l = visibleStart; l < visibleStart + 3; l++) {
+    if (!lines[l]) continue;
+    const lineEl = document.createElement('div');
+    lineEl.className = 'line';
+    lines[l].forEach(item => {
+      const span = document.createElement('span');
+      span.className = 'word' + (item.idx === currentGlobal ? ' current' : item.status === 'done' ? ' done' : item.status === 'wrong' ? ' wrong' : '');
+      span.id = 'w' + item.idx;
+      span.textContent = item.word;
+      if (item.idx === currentGlobal) {
+        const cur = document.createElement('span');
+        cur.id = 'cursor';
+        cur.innerHTML = '&#x200b;';
+        cur.style.cssText = 'display:inline-block;width:2px;height:1.3em;background:#1a1a1a;vertical-align:middle;animation:blink 0.8s steps(1) infinite;margin-left:2px;';
+        span.appendChild(cur);
+      }
+      lineEl.appendChild(span);
+    });
+    wrap.appendChild(lineEl);
+  }
+}
+
+function advanceLine() {
+  const currentLine = getLineOf(currentGlobal);
+  if (currentLine >= lineOffset + 1) {
+    lineOffset++;
+    document.getElementById('fade-top').style.opacity = '1';
+    setTimeout(() => { document.getElementById('fade-top').style.opacity = '0'; }, 300);
+  }
+}
+
+function updateStats() {
+  const elapsed = 60 - timeLeft;
+  const wpm = elapsed > 0 ? Math.round((totalCorrect / 5) / (elapsed / 60)) : 0;
+  document.getElementById('wpm-val').textContent = wpm;
+  const total = totalCorrect + totalWrong;
+  document.getElementById('acc-val').textContent = total > 0 ? Math.round((totalCorrect / total) * 100) + '%' : '—';
+  document.getElementById('timer-val').textContent = timeLeft;
+}
+
+function startTimer() {
+  timer = setInterval(() => { timeLeft--; updateStats(); if (timeLeft <= 0) endGame(); }, 1000);
+}
+
+function endGame() {
+  clearInterval(timer); finished = true;
+  document.getElementById('word-input').disabled = true;
+  document.getElementById('words-box').style.display = 'none';
+  document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('start-btn2').style.display = 'block';
+  const wpm = Math.round((totalCorrect / 5) / 1);
+  const total = totalCorrect + totalWrong;
+  const acc = total > 0 ? Math.round((totalCorrect / total) * 100) : 0;
+  document.getElementById('final-wpm').textContent = wpm;
+  document.getElementById('final-acc').textContent = acc + '% Genauigkeit · ' + totalCorrect + ' Zeichen korrekt';
+  document.getElementById('result-box').style.display = 'flex';
+}
+
+function reset() {
+  clearInterval(timer);
+  allWords = []; moreWords();
+  currentGlobal = 0; started = false; finished = false;
+  timeLeft = 60; totalCorrect = 0; totalWrong = 0; lineOffset = 0;
+  document.getElementById('word-input').value = '';
+  document.getElementById('word-input').disabled = false;
+  document.getElementById('words-box').style.display = '';
+  document.getElementById('start-btn').style.display = '';
+  document.getElementById('start-btn2').style.display = 'none';
+  document.getElementById('result-box').style.display = 'none';
+  document.getElementById('wpm-val').textContent = '0';
+  document.getElementById('acc-val').textContent = '—';
+  document.getElementById('timer-val').textContent = '60';
+  buildLines();
+  renderLines();
+}
+
+document.getElementById('word-input').addEventListener('input', (e) => {
+  if (finished) return;
+  const val = e.target.value;
+  if (!started && val.length > 0) { started = true; startTimer(); }
+  if (val.endsWith(' ')) {
+    const typed = val.trim();
+    if (typed === '') { e.target.value = ''; return; }
+
+    // Find and update word status in lines
+    for (let l = 0; l < lines.length; l++) {
+      for (let w = 0; w < lines[l].length; w++) {
+        if (lines[l][w].idx === currentGlobal) {
+          if (typed === lines[l][w].word) {
+            lines[l][w].status = 'done';
+            totalCorrect += lines[l][w].word.length + 1;
+          } else {
+            lines[l][w].status = 'wrong';
+            totalWrong += typed.length;
+          }
+        }
+      }
+    }
+
+    currentGlobal++;
+    e.target.value = '';
+
+    // Need more words?
+    if (currentGlobal > allWords.length - 20) moreWords();
+    if (currentGlobal > lines[lines.length-1]?.slice(-1)[0]?.idx - 10) {
+      buildLines(); // rebuild with more words
+    }
+
+    advanceLine();
+    renderLines();
+    updateStats();
+  }
+});
+
+document.getElementById('start-btn').addEventListener('click', reset);
+document.getElementById('start-btn2').addEventListener('click', reset);
+
+window.addEventListener('load', reset);
 </script>
 </body>
 </html>
