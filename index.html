@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tipp-App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 1.5rem 1rem; }
+    #app { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; color: #444; text-align: center; }
+    #stats { display: flex; gap: 12px; margin-bottom: 1.5rem; }
+    .stat { flex: 1; background: #fff; border-radius: 12px; padding: 0.75rem; text-align: center; border: 1px solid #e5e5e5; }
+    .stat-val { font-size: 28px; font-weight: 500; color: #1a1a1a; line-height: 1; }
+    .stat-lbl { font-size: 12px; color: #888; margin-top: 4px; }
+    #words-box { background: #fff; border-radius: 12px; padding: 1.25rem; min-height: 110px; font-size: 20px; line-height: 1.8; margin-bottom: 1rem; border: 1px solid #e5e5e5; overflow: hidden; user-select: none; }
+    .word { display: inline-block; margin-right: 8px; color: #aaa; }
+    .word.done { color: #2d9e75; }
+    .word.wrong { color: #e24b4a; text-decoration: underline wavy; }
+    .word.current { color: #1a1a1a; font-weight: 500; }
+    #cursor { display: inline-block; width: 2px; height: 1.2em; background: #1a1a1a; vertical-align: middle; animation: blink 0.8s steps(1) infinite; margin-left: 1px; }
+    @keyframes blink { 50% { opacity: 0; } }
+    #word-input { width: 100%; padding: 14px 16px; font-size: 18px; border-radius: 12px; border: 1.5px solid #ddd; background: #fff; color: #1a1a1a; outline: none; font-family: system-ui, sans-serif; }
+    #word-input:focus { border-color: #888; }
+    #start-btn, #start-btn2 { width: 100%; margin-top: 1rem; padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; font-family: system-ui, sans-serif; transition: background 0.15s; }
+    #start-btn:hover, #start-btn2:hover { background: #f0f0f0; }
+    #result-box { display: none; text-align: center; padding: 2rem 1rem; }
+    #result-box h2 { font-size: 22px; font-weight: 500; margin-bottom: 0.5rem; }
+    .big { font-size: 64px; font-weight: 500; line-height: 1; margin: 1rem 0; }
+    .sub { color: #888; font-size: 15px; margin-bottom: 1.5rem; }
+    .wpm-label { font-size: 16px; color: #888; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Tipp-Test</h1>
+  <div id="stats">
+    <div class="stat"><div class="stat-val" id="wpm-val">0</div><div class="stat-lbl">WPM</div></div>
+    <div class="stat"><div class="stat-val" id="acc-val">—</div><div class="stat-lbl">Genauigkeit</div></div>
+    <div class="stat"><div class="stat-val" id="timer-val">60</div><div class="stat-lbl">Sekunden</div></div>
+  </div>
+  <div id="words-box"></div>
+  <input id="word-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tippen um zu starten..." />
+  <button id="start-btn">Neu starten</button>
+
+  <div id="result-box">
+    <h2>Ergebnis</h2>
+    <div class="big" id="final-wpm">0</div>
+    <div class="wpm-label">Wörter pro Minute</div>
+    <p class="sub" id="final-acc"></p>
+    <button id="start-btn2">Nochmal</button>
+  </div>
+</div>
+
+<script>
+const WORDS = ["die","das","und","ist","in","von","den","mit","auf","des","zu","nicht","als","auch","es","an","war","bei","nach","noch","aber","durch","alle","sie","wir","ihr","haben","werden","einer","oder","hat","sich","ihm","ein","wie","so","man","dann","wenn","aus","dem","mehr","ich","Zeit","Menschen","Leben","Jahr","Welt","Staat","Kinder","Haus","Wasser","Schule","Stadt","Arbeit","Land","Tag","Hand","Weg","Herr","Frau","Geld","Recht","Volk","Buch","Kind","Zahl","Bild","Blick","Teil","Wort","Kraft","Platz","Seite","Geschichte","Frage","Nacht","Licht","Abend","Musik","Spiel","Feuer","Sturm","Traum","Wiese","Brücke","Garten","Baum","Wind","Regen","Sonne","Berg","Fluss","Meer","Vogel","Stein","Blume","Straße","Fenster","Tisch","Stuhl","Brief","Brot","Glas","Zug","Auto","Uhr"];
+
+let words=[], current=0, started=false, finished=false;
+let timer=null, timeLeft=60, totalCorrect=0, totalWrong=0;
+
+function shuffle(a){return[...a].sort(()=>Math.random()-0.5);}
+function genWords(){let p=shuffle(WORDS),r=[];while(r.length<80)r=r.concat(shuffle(p));return r.slice(0,80);}
+
+function renderWords(){
+  const box=document.getElementById('words-box');
+  box.innerHTML=words.map((w,i)=>`<span class="word ${i<current?'done':i===current?'current':''}" id="w${i}">${w}</span>`).join('')+'<span id="cursor"></span>';
+  scrollToCurrent();
+}
+
+function scrollToCurrent(){
+  const el=document.getElementById('w'+current);
+  const cur=document.getElementById('cursor');
+  if(el){cur.style.display='inline-block';el.after(cur);}
+}
+
+function updateStats(){
+  const elapsed=60-timeLeft;
+  const wpm=elapsed>0?Math.round((totalCorrect/5)/(elapsed/60)):0;
+  document.getElementById('wpm-val').textContent=wpm;
+  const total=totalCorrect+totalWrong;
+  document.getElementById('acc-val').textContent=total>0?Math.round((totalCorrect/total)*100)+'%':'—';
+  document.getElementById('timer-val').textContent=timeLeft;
+}
+
+function startTimer(){
+  timer=setInterval(()=>{timeLeft--;updateStats();if(timeLeft<=0)endGame();},1000);
+}
+
+function endGame(){
+  clearInterval(timer);finished=true;
+  document.getElementById('word-input').disabled=true;
+  document.getElementById('words-box').style.display='none';
+  document.getElementById('word-input').style.display='none';
+  document.getElementById('start-btn').style.display='none';
+  const wpm=Math.round((totalCorrect/5)/1);
+  const total=totalCorrect+totalWrong;
+  const acc=total>0?Math.round((totalCorrect/total)*100):0;
+  document.getElementById('final-wpm').textContent=wpm;
+  document.getElementById('final-acc').textContent=acc+'% Genauigkeit · '+totalCorrect+' Zeichen korrekt';
+  document.getElementById('result-box').style.display='block';
+}
+
+function reset(){
+  clearInterval(timer);
+  words=genWords();current=0;started=false;finished=false;
+  timeLeft=60;totalCorrect=0;totalWrong=0;
+  document.getElementById('word-input').value='';
+  document.getElementById('word-input').disabled=false;
+  document.getElementById('word-input').style.display='';
+  document.getElementById('words-box').style.display='';
+  document.getElementById('start-btn').style.display='';
+  document.getElementById('result-box').style.display='none';
+  document.getElementById('wpm-val').textContent='0';
+  document.getElementById('acc-val').textContent='—';
+  document.getElementById('timer-val').textContent='60';
+  renderWords();
+  document.getElementById('word-input').focus();
+}
+
+document.getElementById('word-input').addEventListener('input',(e)=>{
+  if(finished)return;
+  const val=e.target.value;
+  if(!started&&val.length>0){started=true;startTimer();}
+  if(val.endsWith(' ')){
+    const typed=val.trim();
+    if(typed===''){e.target.value='';return;}
+    if(typed===words[current]){document.getElementById('w'+current).className='word done';totalCorrect+=words[current].length+1;}
+    else{document.getElementById('w'+current).className='word wrong';totalWrong+=typed.length;}
+    current++;
+    e.target.value='';
+    if(current>=words.length){words=words.concat(genWords());renderWords();}
+    scrollToCurrent();updateStats();
+  }
+});
+
+document.getElementById('start-btn').addEventListener('click',reset);
+document.getElementById('start-btn2').addEventListener('click',reset);
+reset();
+</script>
+</body>
+</html>
