@@ -16,13 +16,11 @@
     .stat-val { font-size: 24px; font-weight: 500; line-height: 1; }
     .stat-lbl { font-size: 11px; color: #888; margin-top: 3px; }
     #words-box { flex-shrink: 0; background: #fff; border-radius: 12px; padding: 0.75rem 1rem; border: 1px solid #e5e5e5; margin-bottom: 0.75rem; overflow: hidden; height: 7rem; }
-    .line { display: flex; flex-wrap: wrap; gap: 6px; height: 3rem; align-items: center; overflow: hidden; }
-    .word { font-size: 19px; color: #bbb; white-space: nowrap; }
+    .line { display: flex; flex-wrap: wrap; gap: 8px; height: 3rem; align-items: center; overflow: hidden; }
+    .word { font-size: 18px; color: #bbb; white-space: nowrap; }
     .word.done { color: #2d9e75; }
     .word.wrong { color: #e24b4a; text-decoration: underline wavy; }
-    .word.current { color: #1a1a1a; font-weight: 500; }
-    #cursor { display: inline-block; width: 2px; height: 1.3em; background: #1a1a1a; vertical-align: middle; animation: blink 0.8s steps(1) infinite; margin-left: 2px; }
-    @keyframes blink { 50% { opacity: 0; } }
+    .word.current { color: #1a1a1a; font-weight: 500; border-bottom: 2px solid #1a1a1a; }
     #bottom { flex-shrink: 0; }
     input[type=text] { width: 100%; padding: 14px 16px; font-size: 18px; border-radius: 12px; border: 1.5px solid #ddd; background: #fff; color: #1a1a1a; outline: none; font-family: system-ui, sans-serif; }
     input[type=text]:focus { border-color: #888; }
@@ -46,6 +44,7 @@
     #lb-tabs { display: flex; gap: 8px; margin-bottom: 0.75rem; flex-shrink: 0; }
     .tab { flex: 1; padding: 8px; font-size: 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #888; font-family: system-ui, sans-serif; margin-top: 0; }
     .tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    #hint { text-align: center; font-size: 13px; color: #aaa; margin-top: 0.5rem; }
   </style>
 </head>
 <body>
@@ -59,7 +58,8 @@
   </div>
   <div id="words-box"><div id="lines-wrap"></div></div>
   <div id="bottom">
-    <input id="word-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tippen um zu starten..." />
+    <input id="word-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Hier tippen und Test startet automatisch..." />
+    <p id="hint">Tippe das erste Wort und drücke Leertaste</p>
     <div id="nav">
       <button id="restart-btn">Neu starten</button>
       <button id="goto-lb-btn">🏆 Rangliste</button>
@@ -105,13 +105,15 @@ function buildLines(){
   if(W<=0)return;
   const cv=document.createElement('canvas');
   const ctx=cv.getContext('2d');
-  ctx.font='19px system-ui,sans-serif';
+  // Use slightly smaller font for measurement to ensure fewer words per line
+  ctx.font='18px system-ui,sans-serif';
   lines=[];
   let cur=[],lw=0;
+  const MAX_W = W * 0.82; // use only 82% of width so lines don't overflow
   for(let i=0;i<allWords.length;i++){
     const w=allWords[i],ww=ctx.measureText(w).width;
-    if(cur.length>0&&lw+6+ww>W){lines.push(cur);cur=[{word:w,idx:i,status:'pending'}];lw=ww;}
-    else{cur.push({word:w,idx:i,status:'pending'});lw+=(cur.length>1?6:0)+ww;}
+    if(cur.length>0&&lw+8+ww>MAX_W){lines.push(cur);cur=[{word:w,idx:i,status:'pending'}];lw=ww;}
+    else{cur.push({word:w,idx:i,status:'pending'});lw+=(cur.length>1?8:0)+ww;}
   }
   if(cur.length)lines.push(cur);
 }
@@ -128,12 +130,6 @@ function renderLines(){
       span.className='word'+(item.idx===currentGlobal?' current':item.status==='done'?' done':item.status==='wrong'?' wrong':'');
       span.textContent=item.word;
       lineEl.appendChild(span);
-      if(item.idx===currentGlobal){
-        const c=document.createElement('span');
-        c.id='cursor';
-        c.style.cssText='display:inline-block;width:2px;height:1.3em;background:#1a1a1a;vertical-align:middle;animation:blink 0.8s steps(1) infinite;margin-left:2px;';
-        lineEl.appendChild(c);
-      }
     });
     wrap.appendChild(lineEl);
   }
@@ -156,6 +152,7 @@ function updateStats(){
 }
 
 function startTimer(){
+  document.getElementById('hint').style.display='none';
   timer=setInterval(()=>{timeLeft--;updateStats();if(timeLeft<=0)endGame();},1000);
 }
 
@@ -185,6 +182,7 @@ function resetGame(){
   timeLeft=60;totalCorrect=0;totalWrong=0;lineOffset=0;
   document.getElementById('word-input').value='';
   document.getElementById('word-input').disabled=false;
+  document.getElementById('hint').style.display='block';
   document.getElementById('wpm-val').textContent='0';
   document.getElementById('acc-val').textContent='—';
   document.getElementById('timer-val').textContent='60';
@@ -199,7 +197,7 @@ async function saveScore(name){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({name:name.trim(),wpm:finalWpm,acc:finalAcc,date:today,ts:Date.now()})
   });
-  if(!res.ok)throw new Error('Speichern fehlgeschlagen');
+  if(!res.ok)throw new Error('Fehler');
 }
 
 async function loadLeaderboard(){
@@ -264,13 +262,8 @@ document.getElementById('save-btn').addEventListener('click',async()=>{
   if(!name){document.getElementById('name-input').focus();return;}
   document.getElementById('save-btn').textContent='Wird gespeichert...';
   document.getElementById('save-btn').disabled=true;
-  try{
-    await saveScore(name);
-    showScreen('leaderboard');
-  }catch(err){
-    document.getElementById('save-btn').textContent='Fehler – nochmal versuchen';
-    document.getElementById('save-btn').disabled=false;
-  }
+  try{await saveScore(name);showScreen('leaderboard');}
+  catch(err){document.getElementById('save-btn').textContent='Fehler – nochmal versuchen';document.getElementById('save-btn').disabled=false;}
 });
 
 document.querySelectorAll('.tab').forEach(tab=>{
