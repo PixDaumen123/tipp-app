@@ -28,11 +28,16 @@
     button:hover { background: #f0f0ee; }
     #nav { display: flex; gap: 8px; margin-top: 0.6rem; }
     #nav button { flex: 1; margin-top: 0; font-size: 13px; padding: 10px; }
+    #hint { text-align: center; font-size: 13px; color: #aaa; margin-top: 0.5rem; }
+
+    /* RESULT */
     #screen-result { justify-content: center; text-align: center; }
     .big { font-size: 72px; font-weight: 500; line-height: 1; margin: 0.5rem 0; }
     .wpm-label { font-size: 15px; color: #888; }
     .sub { color: #888; font-size: 14px; margin: 0.5rem 0 1rem; }
     #save-btn { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+    /* LEADERBOARD */
     #screen-leaderboard { overflow: hidden; }
     #lb-list { flex: 1; overflow-y: auto; }
     .lb-row { display: flex; align-items: center; gap: 12px; padding: 0.7rem 0; border-bottom: 1px solid #f0f0f0; }
@@ -44,13 +49,66 @@
     #lb-tabs { display: flex; gap: 8px; margin-bottom: 0.75rem; flex-shrink: 0; }
     .tab { flex: 1; padding: 8px; font-size: 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #888; font-family: system-ui, sans-serif; margin-top: 0; }
     .tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-    #hint { text-align: center; font-size: 13px; color: #aaa; margin-top: 0.5rem; }
+
+    /* HOME */
+    #screen-home { justify-content: center; gap: 0.75rem; }
+    #screen-home h2 { font-size: 22px; font-weight: 500; text-align: center; margin-bottom: 0.5rem; color: #1a1a1a; }
+    #screen-home p { text-align: center; color: #888; font-size: 14px; margin-bottom: 1rem; }
+    .home-btn { width: 100%; padding: 18px; font-size: 16px; border-radius: 14px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; font-family: system-ui, sans-serif; margin-top: 0; }
+    .home-btn:hover { background: #f0f0ee; }
+    .home-btn.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    .home-btn.primary:hover { background: #333; }
+    .divider { text-align: center; color: #aaa; font-size: 13px; margin: 0.25rem 0; }
+
+    /* ROOM */
+    #screen-room { justify-content: center; gap: 0.6rem; }
+    #screen-room h2 { font-size: 20px; font-weight: 500; text-align: center; }
+    #room-code-display { font-size: 48px; font-weight: 500; text-align: center; letter-spacing: 0.15em; background: #fff; border-radius: 14px; padding: 1.25rem; border: 1px solid #e5e5e5; margin: 0.5rem 0; }
+    #room-code-display span { font-size: 14px; display: block; color: #aaa; font-weight: 400; letter-spacing: 0; margin-bottom: 0.5rem; }
+    #room-badge { display: inline-flex; align-items: center; gap: 6px; background: #f0f0ee; border-radius: 20px; padding: 4px 12px; font-size: 13px; color: #666; margin-bottom: 0.25rem; align-self: center; }
+
+    /* JOIN */
+    #screen-join { justify-content: center; gap: 0.6rem; }
+    #screen-join h2 { font-size: 20px; font-weight: 500; text-align: center; }
+    #code-input { text-align: center; font-size: 28px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; }
+    #join-error { color: #e24b4a; font-size: 13px; text-align: center; min-height: 18px; }
   </style>
 </head>
 <body>
 
-<div id="screen-game" class="screen active">
-  <h1>Tipp-Test</h1>
+<!-- HOME SCREEN -->
+<div id="screen-home" class="screen active">
+  <h2>🎯 Tipp-Test</h2>
+  <p>Teste deine Tippgeschwindigkeit</p>
+  <button class="home-btn primary" id="play-global-btn">Globales Spiel starten</button>
+  <div class="divider">— oder —</div>
+  <button class="home-btn" id="create-room-btn">🏫 Klassen-Raum erstellen</button>
+  <button class="home-btn" id="join-room-btn">🔑 Raum beitreten</button>
+  <button class="home-btn" id="home-lb-btn" style="color:#888;">🏆 Globale Rangliste</button>
+</div>
+
+<!-- JOIN ROOM SCREEN -->
+<div id="screen-join" class="screen">
+  <h2>Raum beitreten</h2>
+  <p style="text-align:center;color:#888;font-size:14px;">Gib den Code deines Lehrers ein</p>
+  <input id="code-input" type="text" maxlength="6" placeholder="z.B. K7X2" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
+  <p id="join-error"></p>
+  <button id="join-confirm-btn" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a;">Beitreten</button>
+  <button id="join-back-btn" style="color:#888;">← Zurück</button>
+</div>
+
+<!-- ROOM INFO SCREEN (after creating or joining) -->
+<div id="screen-room" class="screen">
+  <div id="room-badge">🏫 <span id="room-name-display">Klasse</span></div>
+  <div id="room-code-display"><span>Raum-Code</span><strong id="room-code-big">----</strong></div>
+  <button class="home-btn primary" id="room-play-btn">Spiel starten</button>
+  <button class="home-btn" id="room-lb-btn">🏆 Klassen-Rangliste</button>
+  <button class="home-btn" style="color:#888;" id="room-leave-btn">← Verlassen</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="screen-game" class="screen">
+  <h1 id="game-title">Tipp-Test</h1>
   <div id="stats">
     <div class="stat"><div class="stat-val" id="wpm-val">0</div><div class="stat-lbl">WPM</div></div>
     <div class="stat"><div class="stat-val" id="acc-val">—</div><div class="stat-lbl">Genauigkeit</div></div>
@@ -58,7 +116,7 @@
   </div>
   <div id="words-box"><div id="lines-wrap"></div></div>
   <div id="bottom">
-    <input id="word-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Hier tippen und Test startet automatisch..." />
+    <input id="word-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Hier tippen — startet automatisch..." />
     <p id="hint">Tippe das erste Wort und drücke Leertaste</p>
     <div id="nav">
       <button id="restart-btn">Neu starten</button>
@@ -67,6 +125,7 @@
   </div>
 </div>
 
+<!-- RESULT SCREEN -->
 <div id="screen-result" class="screen">
   <h2 style="font-size:20px;font-weight:500;margin-bottom:0.25rem;">Ergebnis</h2>
   <div class="big" id="final-wpm">0</div>
@@ -77,39 +136,43 @@
   <button id="skip-btn" style="color:#888;">Überspringen</button>
 </div>
 
+<!-- LEADERBOARD SCREEN -->
 <div id="screen-leaderboard" class="screen">
-  <h1>🏆 Rangliste</h1>
+  <h1 id="lb-title">🏆 Rangliste</h1>
   <div id="lb-tabs">
     <button class="tab active" data-tab="alltime">Alle Zeit</button>
     <button class="tab" data-tab="today">Heute</button>
   </div>
   <div id="lb-list"><div class="lb-empty">Wird geladen...</div></div>
-  <button id="back-btn" style="flex-shrink:0;margin-top:0.75rem;">← Zurück zum Spiel</button>
+  <button id="back-btn" style="flex-shrink:0;margin-top:0.75rem;">← Zurück</button>
 </div>
 
 <script>
 const DB = "https://tipp-app-cf84f-default-rtdb.europe-west1.firebasedatabase.app";
-
 const WORDS = ["die","das","und","ist","in","von","den","mit","auf","des","zu","nicht","als","auch","es","an","war","bei","nach","noch","aber","durch","alle","sie","wir","ihr","haben","werden","einer","oder","hat","sich","ihm","ein","wie","so","man","dann","wenn","aus","dem","mehr","ich","Zeit","Menschen","Leben","Jahr","Welt","Staat","Kinder","Haus","Wasser","Schule","Stadt","Arbeit","Land","Tag","Hand","Weg","Herr","Frau","Geld","Recht","Volk","Buch","Kind","Zahl","Bild","Blick","Teil","Wort","Kraft","Platz","Seite","Geschichte","Frage","Nacht","Licht","Abend","Musik","Spiel","Feuer","Sturm","Traum","Wiese","Brücke","Garten","Baum","Wind","Regen","Sonne","Berg","Fluss","Meer","Vogel","Stein","Blume","Straße","Fenster","Tisch","Stuhl","Brief","Brot","Glas","Zug","Auto","Uhr"];
 
+// STATE
 let allWords=[], lines=[], lineOffset=0, currentGlobal=0;
 let started=false, finished=false, timer=null, timeLeft=60;
 let totalCorrect=0, totalWrong=0, finalWpm=0, finalAcc=0;
 let currentTab='alltime';
+let currentRoom=null; // null = global, else {code, name}
+let lbBackTarget='home';
 
 function shuffle(a){return[...a].sort(()=>Math.random()-0.5);}
 function moreWords(){let p=shuffle(WORDS),r=[];while(r.length<60)r=r.concat(shuffle(p));allWords=allWords.concat(r.slice(0,60));}
+function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let r='';for(let i=0;i<4;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
 
+// LINES
 function buildLines(){
   const W=document.getElementById('words-box').clientWidth-32;
   if(W<=0)return;
   const cv=document.createElement('canvas');
   const ctx=cv.getContext('2d');
-  // Use slightly smaller font for measurement to ensure fewer words per line
   ctx.font='18px system-ui,sans-serif';
   lines=[];
   let cur=[],lw=0;
-  const MAX_W = W * 0.82; // use only 82% of width so lines don't overflow
+  const MAX_W=W*0.82;
   for(let i=0;i<allWords.length;i++){
     const w=allWords[i],ww=ctx.measureText(w).width;
     if(cur.length>0&&lw+8+ww>MAX_W){lines.push(cur);cur=[{word:w,idx:i,status:'pending'}];lw=ww;}
@@ -190,26 +253,36 @@ function resetGame(){
   setTimeout(()=>{buildLines();renderLines();document.getElementById('word-input').focus();},80);
 }
 
+// FIREBASE
+function scoresPath(){
+  return currentRoom ? `/rooms/${currentRoom.code}/scores` : '/scores';
+}
+
 async function saveScore(name){
   const today=new Date().toISOString().slice(0,10);
-  const res=await fetch(DB+'/scores.json',{
+  const payload={name:name.trim(),wpm:finalWpm,acc:finalAcc,date:today,ts:Date.now()};
+  const res=await fetch(DB+scoresPath()+'.json',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name:name.trim(),wpm:finalWpm,acc:finalAcc,date:today,ts:Date.now()})
+    body:JSON.stringify(payload)
   });
   if(!res.ok)throw new Error('Fehler');
 }
 
 async function loadLeaderboard(){
   document.getElementById('lb-list').innerHTML='<div class="lb-empty">Wird geladen...</div>';
+  const path=scoresPath();
+  // Room LB has no today tab
+  document.getElementById('lb-tabs').style.display=currentRoom?'none':'flex';
+  document.getElementById('lb-title').textContent=currentRoom?'🏆 '+currentRoom.code+' – Rangliste':'🏆 Rangliste';
   try{
-    const res=await fetch(DB+'/scores.json');
+    const res=await fetch(DB+path+'.json');
     if(!res.ok)throw new Error();
     const data=await res.json();
     if(!data){document.getElementById('lb-list').innerHTML='<div class="lb-empty">Noch keine Einträge.</div>';return;}
     let entries=Object.values(data);
     entries.sort((a,b)=>b.wpm-a.wpm);
-    if(currentTab==='today'){
+    if(!currentRoom&&currentTab==='today'){
       const today=new Date().toISOString().slice(0,10);
       entries=entries.filter(e=>e.date===today);
     }
@@ -228,6 +301,34 @@ async function loadLeaderboard(){
   }
 }
 
+async function createRoom(){
+  const code=genCode();
+  // Save room to Firebase
+  await fetch(DB+`/rooms/${code}/info.json`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({code,created:Date.now()})
+  });
+  currentRoom={code};
+  document.getElementById('room-code-big').textContent=code;
+  document.getElementById('room-name-display').textContent='Raum '+code;
+  showScreen('room');
+}
+
+async function joinRoom(code){
+  code=code.toUpperCase().trim();
+  if(code.length<4){document.getElementById('join-error').textContent='Bitte einen gültigen Code eingeben.';return;}
+  // Check if room exists
+  const res=await fetch(DB+`/rooms/${code}/info.json`);
+  const data=await res.json();
+  if(!data){document.getElementById('join-error').textContent='Raum nicht gefunden. Code prüfen.';return;}
+  currentRoom={code};
+  document.getElementById('room-code-big').textContent=code;
+  document.getElementById('room-name-display').textContent='Raum '+code;
+  showScreen('room');
+}
+
+// INPUT
 document.getElementById('word-input').addEventListener('input',(e)=>{
   if(finished)return;
   const val=e.target.value;
@@ -252,20 +353,67 @@ document.getElementById('word-input').addEventListener('input',(e)=>{
   }
 });
 
-document.getElementById('restart-btn').addEventListener('click',resetGame);
-document.getElementById('goto-lb-btn').addEventListener('click',()=>showScreen('leaderboard'));
-document.getElementById('back-btn').addEventListener('click',()=>showScreen('game'));
-document.getElementById('skip-btn').addEventListener('click',resetGame);
+// HOME
+document.getElementById('play-global-btn').addEventListener('click',()=>{
+  currentRoom=null;
+  document.getElementById('game-title').textContent='Tipp-Test';
+  lbBackTarget='home';
+  resetGame();
+});
+document.getElementById('home-lb-btn').addEventListener('click',()=>{
+  currentRoom=null;
+  lbBackTarget='home';
+  showScreen('leaderboard');
+});
+document.getElementById('create-room-btn').addEventListener('click',createRoom);
+document.getElementById('join-room-btn').addEventListener('click',()=>showScreen('join'));
 
+// JOIN
+document.getElementById('join-confirm-btn').addEventListener('click',()=>joinRoom(document.getElementById('code-input').value));
+document.getElementById('code-input').addEventListener('keydown',(e)=>{if(e.key==='Enter')joinRoom(document.getElementById('code-input').value);});
+document.getElementById('join-back-btn').addEventListener('click',()=>{document.getElementById('join-error').textContent='';showScreen('home');});
+
+// ROOM
+document.getElementById('room-play-btn').addEventListener('click',()=>{
+  document.getElementById('game-title').textContent='🏫 Raum '+currentRoom.code;
+  lbBackTarget='room';
+  resetGame();
+});
+document.getElementById('room-lb-btn').addEventListener('click',()=>{
+  lbBackTarget='room';
+  showScreen('leaderboard');
+});
+document.getElementById('room-leave-btn').addEventListener('click',()=>{currentRoom=null;showScreen('home');});
+
+// GAME
+document.getElementById('restart-btn').addEventListener('click',resetGame);
+document.getElementById('goto-lb-btn').addEventListener('click',()=>{
+  lbBackTarget=currentRoom?'room':'home';
+  showScreen('leaderboard');
+});
+
+// RESULT
 document.getElementById('save-btn').addEventListener('click',async()=>{
   const name=document.getElementById('name-input').value.trim();
   if(!name){document.getElementById('name-input').focus();return;}
   document.getElementById('save-btn').textContent='Wird gespeichert...';
   document.getElementById('save-btn').disabled=true;
-  try{await saveScore(name);showScreen('leaderboard');}
-  catch(err){document.getElementById('save-btn').textContent='Fehler – nochmal versuchen';document.getElementById('save-btn').disabled=false;}
+  try{
+    await saveScore(name);
+    lbBackTarget=currentRoom?'room':'home';
+    showScreen('leaderboard');
+  }catch(err){
+    document.getElementById('save-btn').textContent='Fehler – nochmal versuchen';
+    document.getElementById('save-btn').disabled=false;
+  }
+});
+document.getElementById('skip-btn').addEventListener('click',()=>{
+  if(currentRoom)showScreen('room');
+  else showScreen('home');
 });
 
+// LEADERBOARD
+document.getElementById('back-btn').addEventListener('click',()=>showScreen(lbBackTarget));
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.addEventListener('click',()=>{
     currentTab=tab.dataset.tab;
